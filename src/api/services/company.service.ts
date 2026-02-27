@@ -1,6 +1,7 @@
 import { db, users, organizations } from "../db";
 import { eq } from "drizzle-orm";
 import { NotFoundError } from "../utils/errors";
+import * as _ from "lodash";
 
 export interface CompanyProfile {
   name: string;
@@ -64,4 +65,33 @@ export class CompanyService {
       },
     };
   }
+
+   static async updateCompanyProfile(userId: string, data: CompanyProfile): Promise<CompanyProfile> {
+    const [user] = await db
+      .select({ organizationId: users.organizationId })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user?.organizationId) {
+      throw new NotFoundError("User is not associated with an organization");
+    }
+
+    const [org] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, user.organizationId))
+      .limit(1);
+
+    if (!org) {
+      throw new NotFoundError("Organization not found");
+    }
+
+    const updatedCompanyProfile = _.merge({}, org, data);
+
+
+    return {...updatedCompanyProfile }
+  }
+
+
 }
