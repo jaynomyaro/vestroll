@@ -76,6 +76,18 @@ export const approvalStatusEnum = pgEnum("approval_status", [
   "rejected",
 ]);
 export const timeOffTypeEnum = pgEnum("time_off_type", ["paid", "unpaid"]);
+export const invitationStatusEnum = pgEnum("invitation_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "expired",
+]);
+export const invitationRoleEnum = pgEnum("invitation_role", [
+  "admin",
+  "hr_manager",
+  "payroll_manager",
+  "employee",
+]);
 
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -141,6 +153,8 @@ export const organizationRelations = relations(
   organizations,
   (helpers: any) => ({
     users: helpers.many(users),
+    employees: helpers.many(employees),
+    invitations: helpers.many(organizationInvitations),
   }),
 );
 
@@ -444,6 +458,45 @@ export const passwordResets = pgTable("password_resets", {
 }, (table) => [
   index("password_resets_user_id_idx").on(table.userId),
 ]);
+
+export const organizationInvitations = pgTable("organization_invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull(),
+  invitedByUserId: uuid("invited_by_user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  role: invitationRoleEnum("role").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  status: invitationStatusEnum("status").default("pending").notNull(),
+  message: text("message"),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  declinedAt: timestamp("declined_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("organization_invitations_organization_id_idx").on(table.organizationId),
+  index("organization_invitations_email_idx").on(table.email),
+  index("organization_invitations_token_idx").on(table.token),
+  index("organization_invitations_status_idx").on(table.status),
+]);
+
+export const organizationInvitationRelations = relations(
+  organizationInvitations,
+  (helpers: any) => ({
+    organization: helpers.one(organizations, {
+      fields: [organizationInvitations.organizationId],
+      references: [organizations.id],
+    }),
+    invitedBy: helpers.one(users, {
+      fields: [organizationInvitations.invitedByUserId],
+      references: [users.id],
+    }),
+  }),
+);
 export const employeeRelations = relations(employees, (helpers: any) => ({
   organization: helpers.one(organizations, {
     fields: [employees.organizationId],
