@@ -1,10 +1,3 @@
-/**
- * Example: Frontend KYB Rejection Handler
- * 
- * This component demonstrates how to use KYB rejection codes to provide
- * specific feedback to users. This is a reference implementation.
- */
-
 import { 
   KYB_REJECTION_CODES, 
   KYB_REJECTION_MESSAGES, 
