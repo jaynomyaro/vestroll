@@ -155,6 +155,34 @@ describe("FlutterwaveProvider", () => {
 
       expect(result.status).toBe("pending");
     });
+
+    it("maps FAILED status to failed", async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          status: "success",
+          data: {
+            id: 101,
+            reference: "ref-fail",
+            status: "FAILED",
+            amount: 2000,
+            fee: 10,
+          },
+        }),
+      });
+
+      const result = await provider.disburse({
+        amount: 2000,
+        reference: "ref-fail",
+        narration: "Failed",
+        destinationBankCode: "058",
+        destinationAccountNumber: "0123456789",
+        destinationAccountName: "Z",
+        currency: "NGN",
+      });
+
+      expect(result.status).toBe("failed");
+    });
   });
 
   describe("generateVirtualAccount", () => {

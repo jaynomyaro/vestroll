@@ -22,7 +22,7 @@ async function safeJson(res: Response): Promise<any> {
   try {
     return await res.json();
   } catch {
-    throw new BadRequestError(
+    throw new InternalServerError(
       `Flutterwave returned an invalid response (HTTP ${res.status})`,
     );
   }
