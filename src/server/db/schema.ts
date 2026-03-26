@@ -323,6 +323,8 @@ export const organizationWallets = pgTable("organization_wallets", {
     .notNull()
     .unique(),
   walletAddress: varchar("wallet_address", { length: 255 }),
+  virtualAccountNumber: varchar("virtual_account_number", { length: 20 }),
+  virtualBankName: varchar("virtual_bank_name", { length: 255 }),
   funded: boolean("funded").default(false).notNull(),
   fundedAt: timestamp("funded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

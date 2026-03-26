@@ -78,6 +78,13 @@
       "when": 1742900000000,
       "tag": "0008_passkey_registration_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774538534859,
+      "tag": "0009_colorful_legion",
+      "breakpoints": true
     }
   ]
 }
