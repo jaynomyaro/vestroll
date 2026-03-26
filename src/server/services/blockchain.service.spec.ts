@@ -404,6 +404,38 @@ describe("BlockchainService", () => {
     });
   });
 
+  describe("buildFeeBumpXdr", () => {
+    it("should wrap a transaction in a fee-bump", async () => {
+      const { xdr: innerXdr } = await service.buildPaymentXdr({
+        sourceSecret: TEST_SECRET,
+        destination: DESTINATION_PUBLIC_KEY,
+        amount: "10",
+      });
+
+      const sponsorSecret = Keypair.random().secret();
+      const result = await service.buildFeeBumpXdr({
+        innerTxXdr: innerXdr,
+        feeSourceSecret: sponsorSecret,
+        baseFee: 200,
+      });
+
+      expect(result.xdr).toBeDefined();
+      expect(result.networkPassphrase).toBe(Networks.TESTNET);
+
+      const parsed = TransactionBuilder.fromXDR(result.xdr, Networks.TESTNET);
+      expect(parsed.constructor.name).toBe("FeeBumpTransaction");
+    });
+
+    it("should throw for invalid inner XDR", async () => {
+      await expect(
+        service.buildFeeBumpXdr({
+          innerTxXdr: "INVALID",
+          feeSourceSecret: TEST_SECRET,
+        }),
+      ).rejects.toThrow(/Invalid inner transaction XDR/);
+    });
+  });
+
   describe("signTransaction", () => {
     it("should add a signature to an unsigned transaction", async () => {
       mockRpcServer.getAccount.mockResolvedValue(

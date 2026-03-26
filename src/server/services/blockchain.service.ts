@@ -375,6 +375,43 @@ export class BlockchainService {
     return result;
   }
 
+  async buildFeeBumpXdr(params: {
+    innerTxXdr: string;
+    feeSourceSecret: string;
+    baseFee?: number | string;
+  }): Promise<TransactionXdr> {
+    const feeSourceKeypair = Keypair.fromSecret(params.feeSourceSecret);
+
+    let innerTx: Transaction | FeeBumpTransaction;
+    try {
+      innerTx = TransactionBuilder.fromXDR(
+        params.innerTxXdr,
+        this.networkConfig.networkPassphrase,
+      );
+    } catch (error) {
+      throw new Error(
+        `Invalid inner transaction XDR: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    if (!(innerTx instanceof Transaction)) {
+      throw new Error("Inner transaction must be a Transaction instance");
+    }
+
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      feeSourceKeypair.publicKey(),
+      params.baseFee?.toString() ?? BASE_FEE,
+      innerTx,
+      this.networkConfig.networkPassphrase,
+    );
+
+    return {
+      xdr: feeBump.toXDR(),
+      hash: feeBump.hash().toString("hex"),
+      networkPassphrase: this.networkConfig.networkPassphrase,
+    };
+  }
+
   async buildContractCallXdr(params: {
     sourcePublicKey: string;
     contractId: string;
