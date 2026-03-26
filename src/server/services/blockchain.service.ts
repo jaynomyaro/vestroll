@@ -15,6 +15,7 @@ import {
 } from "@stellar/stellar-sdk";
 import { Server as RpcServer, Api } from "@stellar/stellar-sdk/rpc";
 import { Logger } from "./logger.service";
+import { ServiceDiscovery, EnvServiceDiscovery } from "@/server/utils/service-discovery";
 
 type NetworkName = "testnet" | "mainnet" | "futurenet";
 
@@ -81,13 +82,18 @@ export class BlockchainService {
   private rpcServer: RpcServer;
   private networkConfig: NetworkConfig;
 
-  constructor(network: NetworkName = "testnet") {
+  constructor(
+    network: NetworkName = "testnet",
+    private readonly serviceDiscovery: ServiceDiscovery = new EnvServiceDiscovery(),
+  ) {
     this.networkConfig = {
       ...NETWORK_CONFIGS[network],
-      rpcUrl:
-        process.env.STELLAR_RPC_URL || NETWORK_CONFIGS[network].rpcUrl,
-      horizonUrl:
-        process.env.STELLAR_HORIZON_URL || NETWORK_CONFIGS[network].horizonUrl,
+      rpcUrl: this.serviceDiscovery.getRpcUrl(
+        NETWORK_CONFIGS[network].rpcUrl,
+      ),
+      horizonUrl: this.serviceDiscovery.getHorizonUrl(
+        NETWORK_CONFIGS[network].horizonUrl,
+      ),
     };
 
     if (!this.networkConfig.rpcUrl) {

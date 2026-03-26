@@ -33,6 +33,7 @@ import {
   RegisterInput,
   PasskeyRegistrationInput,
 } from "../validations/auth.schema";
+import { Logger } from "./logger.service";
 
 /** Max age for a passkey registration challenge (WebAuthn-style short TTL). */
 const PASSKEY_REGISTRATION_CHALLENGE_TTL_MS = 5 * 60 * 1000;
@@ -108,9 +109,9 @@ export class AuthService {
         expiresAt,
       });
 
-      console.log(`[Email Mock] Sending OTP ${otp} to ${businessEmail}`);
+      Logger.info("Email verification OTP generated", { email: businessEmail });
       if (process.env.NODE_ENV !== "production") {
-        console.log(pc.green(`User Registered: ${user.email}`));
+        Logger.debug("User registered successfully", { email: user.email });
       }
       return {
         userId: user.id,
@@ -142,7 +143,7 @@ export class AuthService {
         failureReason: "Rate limit exceeded",
       });
       if (process.env.NODE_ENV !== "production") {
-        console.log(pc.red(`Login Failed: ${email} - Rate limit exceeded`));
+        Logger.debug("Login attempt blocked due to rate limit", { email });
       }
       throw new TooManyRequestsError(
         "Too many login attempts. Please try again in 15 minutes.",
@@ -161,7 +162,7 @@ export class AuthService {
         failureReason: "User not found",
       });
       if (process.env.NODE_ENV !== "production") {
-        console.log(pc.red(`Login Failed: ${email} - User not found`));
+        Logger.debug("Login attempt with unknown email", { email });
       }
       throw new UnauthorizedError("Invalid email or password");
     }
@@ -178,7 +179,7 @@ export class AuthService {
         failureReason: "Account locked",
       });
       if (process.env.NODE_ENV !== "production") {
-        console.log(pc.red(`Login Failed: ${email} - Account locked`));
+        Logger.debug("Login attempt with locked account", { email });
       }
       throw new ForbiddenError(
         `Account is temporarily locked.Try again after ${unlockTime} `,
@@ -196,7 +197,7 @@ export class AuthService {
         failureReason: "Unverified account",
       });
       if (process.env.NODE_ENV !== "production") {
-        console.log(pc.red(`Login Failed: ${email} - Unverified account`));
+        Logger.debug("Login attempt with unverified account", { email });
       }
       throw new ForbiddenError(
         "Account verification pending. Please check your email.",
@@ -219,7 +220,7 @@ export class AuthService {
         failureReason: "Invalid password",
       });
       if (process.env.NODE_ENV !== "production") {
-        console.log(pc.red(`Login Failed: ${email} - Invalid password`));
+        Logger.debug("Login attempt with invalid password", { email });
       }
       throw new UnauthorizedError("Invalid email or password");
     }
@@ -271,7 +272,7 @@ export class AuthService {
       success: true,
     });
     if (process.env.NODE_ENV !== "production") {
-      console.log(pc.green(`Login Successful: ${user.email}`));
+      Logger.debug("User login successful", { email: user.email });
     }
     return {
       accessToken,
