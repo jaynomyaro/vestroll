@@ -121,6 +121,7 @@ export const auditEventEnum = pgEnum("audit_event", [
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
   industry: varchar("industry", { length: 255 }),
   registrationNumber: varchar("registration_number", { length: 255 }),
 
@@ -311,9 +312,6 @@ export const employees = pgTable(
     type: employeeTypeEnum("type").notNull(),
     status: employeeStatusEnum("status").default("Active").notNull(),
     avatarUrl: varchar("avatar_url", { length: 512 }),
-    bankName: varchar("bank_name", { length: 255 }),
-    accountNumber: varchar("account_number", { length: 20 }),
-    accountName: varchar("account_name", { length: 255 }),
     userId: uuid("user_id").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -365,7 +363,7 @@ export const companyProfiles = pgTable("company_profiles", {
   billingAltAddress: varchar("billing_alt_address", { length: 500 }),
   billingCity: varchar("billing_city", { length: 255 }),
   billingRegion: varchar("billing_region", { length: 255 }),
-  billingCountry: varchar("billing_country", { length: 255 }),
+  billingCountry: varchar("billing_country", { length: 2 }).notNull(),
   billingPostalCode: varchar("billing_postal_code", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -625,6 +623,23 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const kybAuditLogs = pgTable(
+  "kyb_audit_logs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityType: varchar("entity_type", { length: 100 }).notNull(),
+    entityId: uuid("entity_id").notNull(),
+    action: varchar("action", { length: 255 }).notNull(),
+    actorId: uuid("actor_id").references(() => users.id, { onDelete: "set null" }),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("kyb_audit_logs_entity_id_idx").on(table.entityId),
+    index("kyb_audit_logs_actor_id_idx").on(table.actorId),
+  ],
+);
+
 export const fiatTransactions = pgTable(
   "fiat_transactions",
   {
@@ -666,3 +681,13 @@ export const transactionCache = pgTable("transaction_cache", {
   resultJson: text("result_json").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
 });
+
+export const signerAudits = pgTable("signer_audits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  signerPublicKey: varchar("signer_public_key", { length: 56 }).notNull(),
+  transactionHash: varchar("transaction_hash", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("signer_audits_transaction_hash_idx").on(table.transactionHash),
+]);
+

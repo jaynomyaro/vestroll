@@ -1,3 +1,6 @@
+import { db } from "../db";
+import { organizations, users, employees, milestones } from "../db/schema";
+import { generateSlug } from "../utils/slug";
 /**
  * Comprehensive seed script for Vestroll.
  *
@@ -119,6 +122,14 @@ function randomDate(start: Date, end: Date): Date {
 }
 
 async function seed() {
+  const org = await db
+    .insert(organizations)
+    .values({
+      name: "Vestroll Inc",
+      slug: generateSlug("Vestroll Inc"),
+      industry: "Fintech",
+    })
+    .returning();
   console.log("Starting seed...\n");
 
   console.log("Upserting organization...");
