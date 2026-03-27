@@ -1,9 +1,11 @@
-import { db } from "../db"; 
+import { db } from "../db";
 import { organizations, users, employees, milestones } from "../db/schema";
+import { generateSlug } from "../utils/slug";
 
 async function seed() {
   const org = await db.insert(organizations).values({
     name: "Vestroll Inc",
+    slug: generateSlug("Vestroll Inc"),
     industry: "Fintech",
   }).returning();
 

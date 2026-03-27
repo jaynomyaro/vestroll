@@ -97,6 +97,7 @@ export const auditEventEnum = pgEnum("audit_event", [
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
   industry: varchar("industry", { length: 255 }),
   registrationNumber: varchar("registration_number", { length: 255 }),
 
