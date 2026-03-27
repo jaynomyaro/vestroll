@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   UsersIcon,
   GlobeAltIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Camera } from "lucide-react";
+import ImageUploadModal from "@/components/features/profile-settings/ImageUploadModal";
 
 interface StatProps {
   Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
@@ -118,8 +119,76 @@ function HeaderTab({
 }
 
 export default function Page() {
-  const [activeTab, setActiveTab] = React.useState("Company");
+  const [activeTab, setActiveTab] = useState("Company");
   const tabs = ["Company", "Permissions", "Hiring templates", "Address book"];
+
+  // ── Logo state ──────────────────────────────────────────────────────────────
+  const [logoSrc, setLogoSrc] = useState("/touchpoint360.png");
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  /**
+   * 3-step logo upload:
+   *  1. GET /api/organizations/logo-upload-url → { signedUrl, key }
+   *  2. PUT blob → S3 via signedUrl
+   *  3. PATCH /api/organizations/logo { key } → { logoUrl }
+   *
+   * Optimistic update: show the local blob URL immediately while upload runs.
+   */
+  const handleLogoSave = useCallback(async (file: File) => {
+    setUploadError(null);
+
+    // Optimistic UI: swap logo immediately so the user sees their crop right away
+    const localUrl = URL.createObjectURL(file);
+    setLogoSrc(localUrl);
+    setIsLogoModalOpen(false);
+
+    setIsUploadingLogo(true);
+    try {
+      // Step 1 — get presigned S3 upload URL
+      const urlRes = await fetch(
+        `/api/organizations/logo-upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`,
+      );
+      if (!urlRes.ok) throw new Error("Failed to get upload URL");
+      const { data: urlData } = await urlRes.json();
+      const { signedUrl, key } = urlData;
+
+      // Step 2 — upload blob directly to S3
+      const s3Res = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!s3Res.ok) throw new Error("Failed to upload logo to storage");
+
+      // Step 3 — save the S3 key to the database
+      // TODO: pass auth Bearer token once auth context is available in this page
+      const patchRes = await fetch("/api/organizations/logo", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      if (!patchRes.ok) {
+        console.warn("[Logo] PATCH returned non-OK — check auth token wiring");
+      } else {
+        const { data: patchData } = await patchRes.json();
+        // Replace optimistic blob URL with the permanent CDN URL
+        if (patchData?.logoUrl) {
+          URL.revokeObjectURL(localUrl);
+          setLogoSrc(patchData.logoUrl);
+        }
+      }
+    } catch (err) {
+      console.error("[Logo upload error]", err);
+      setUploadError(
+        err instanceof Error ? err.message : "Logo upload failed",
+      );
+      // Keep the optimistic local blob URL so the UI doesn't revert to old image
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -162,18 +231,61 @@ export default function Page() {
           >
             <div className="flex flex-col items-center gap-4 text-center md:block sm:items-center sm:justify-start sm:text-left">
               <div className="items-center gap-8 md:flex">
-                <Image
-                  src="/touchpoint360.png"
-                  alt="Touchpoint 360"
-                  width={96}
-                  height={96}
-                  className="mx-auto md:mx-0 sm:h-[112px] sm:w-[112px] h-[96px] w-[96px]"
-                />
+                {/* ── Company logo with camera-overlay Edit trigger ── */}
+                <div className="relative group mx-auto md:mx-0 w-24 h-24 sm:w-28 sm:h-28 shrink-0">
+                  <Image
+                    src={logoSrc}
+                    alt="Company logo"
+                    fill
+                    className="object-cover rounded-xl"
+                    unoptimized={logoSrc.startsWith("blob:")}
+                  />
+                  {/* Upload spinner overlay */}
+                  {isUploadingLogo && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40">
+                      <svg
+                        className="h-6 w-6 animate-spin text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  {/* Camera hover overlay */}
+                  {!isUploadingLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setIsLogoModalOpen(true)}
+                      aria-label="Edit company logo"
+                      className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <Camera className="h-6 w-6 text-white" />
+                    </button>
+                  )}
+                </div>
 
                 <div>
                   <h2 className="text-3xl sm:text-3xl font-semibold text-[#111827] dark:text-white">
                     Touchpoint 360
                   </h2>
+
+                  {uploadError && (
+                    <p className="text-xs text-red-500 mt-1">{uploadError}</p>
+                  )}
 
                   <div className="flex flex-wrap items-center justify-center gap-5 py-4 sm:gap-4 sm:pt-4 sm:justify-start md:gap-10">
                     <Stat Icon={UsersIcon} label="Active members" value="20" />
@@ -205,6 +317,7 @@ export default function Page() {
                   className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium text-(--violet-base) border-(--violet-base) hover:bg-(--violet-hover) hover:text-white active:bg-(--violet-active) transition-colors"
                   type="button"
                   aria-label="Edit company information"
+                  onClick={() => setIsLogoModalOpen(true)}
                 >
                   <Image
                     src="/edit.svg"
@@ -318,6 +431,16 @@ export default function Page() {
           </motion.div>
         </motion.div>
       </AnimatePresence>
+
+      {/* ── Company Logo Crop Modal ── */}
+      <ImageUploadModal
+        isOpen={isLogoModalOpen}
+        onClose={() => setIsLogoModalOpen(false)}
+        onSave={handleLogoSave}
+        currentImage={logoSrc}
+        shape="square"
+      />
     </>
   );
 }
+
