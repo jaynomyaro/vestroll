@@ -170,6 +170,7 @@ export const users = pgTable("users", {
   oauthId: varchar("oauth_id", { length: 255 }),
   signerType: signerTypeEnum("signer_type").default("Email").notNull(),
   lastLoginAt: timestamp("last_login_at"),
+  lastActiveAt: timestamp("last_active_at"),
   lastLoginIp: varchar("last_login_ip", { length: 45 }),
   lastLoginUa: text("last_login_ua"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
