@@ -39,6 +39,10 @@ import { ZodError } from "zod";
  *         description: Validation failed or OAuth-only account
  *       401:
  *         description: Unauthorized or incorrect current password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
  */
 export async function POST(req: NextRequest) {
   try {

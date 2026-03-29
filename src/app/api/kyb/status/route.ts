@@ -37,6 +37,10 @@ import { KybService } from "@/server/services/kyb.service";
  *                   nullable: true
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
  */
 export async function GET(req: NextRequest) {
   try {

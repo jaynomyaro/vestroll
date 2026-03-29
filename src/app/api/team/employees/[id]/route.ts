@@ -15,6 +15,8 @@ const UUID_REGEX =
  *     summary: Get single employee profile
  *     description: Retrieve a comprehensive profile for a specific team member, including contract details and payment history (derived from timesheets). Verifies the employee belongs to the requester's organization.
  *     tags: [Team]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -29,6 +31,10 @@ const UUID_REGEX =
  *         description: Not found
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
  */
 export async function GET(
   request: NextRequest,

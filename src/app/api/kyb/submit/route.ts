@@ -47,6 +47,10 @@ import { ZodError } from "zod";
  *         description: Validation failed
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UnauthorizedError'
  *       409:
  *         description: KYB already submitted or approved
  */
