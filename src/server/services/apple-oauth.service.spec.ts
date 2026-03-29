@@ -13,15 +13,25 @@ vi.mock("jose", () => ({
   jwtVerify: vi.fn(),
   errors: {
     JWTExpired: class extends Error {
-      constructor(message: string) {
+      payload: unknown;
+      claim: string;
+      reason: string;
+      constructor(message: string, payload: unknown, claim?: string, reason?: string) {
         super(message);
+        this.payload = payload;
+        this.claim = claim || '';
+        this.reason = reason || '';
       }
     },
     JWTClaimValidationFailed: class extends Error {
+      payload: unknown;
       claim: string;
-      constructor(message: string, _payload: unknown, claim: string) {
+      reason: string;
+      constructor(message: string, payload: unknown, claim?: string, reason?: string) {
         super(message);
-        this.claim = claim;
+        this.payload = payload;
+        this.claim = claim || '';
+        this.reason = reason || '';
       }
     },
   },
@@ -66,7 +76,7 @@ describe("AppleOAuthService", () => {
 
   it("should throw TokenExpiredError when token is expired", async () => {
     vi.mocked(jose.jwtVerify).mockRejectedValue(
-      new jose.errors.JWTExpired("Token has expired"),
+      new jose.errors.JWTExpired("Token has expired", {}),
     );
 
     await expect(AppleOAuthService.verifyIdToken(mockIdToken)).rejects.toThrow(

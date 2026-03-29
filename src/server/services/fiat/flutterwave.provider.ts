@@ -194,7 +194,7 @@ export class FlutterwaveProvider implements PaymentProvider {
       providerReference: String(data.data.id ?? reference),
       status: FlutterwaveProvider.mapVerificationStatus(data.data.status),
       amount: Number(data.data.amount ?? 0),
-      currency: data.data.currency ?? "NGN",
+      currency: (data.data.currency ?? "NGN") as "NGN",
       paidAt: data.data.created_at,
       raw: data.data,
     };

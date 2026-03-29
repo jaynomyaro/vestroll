@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { POST } from "./route";
 import { NextRequest } from "next/server";
@@ -37,8 +38,8 @@ describe("POST /api/v1/auth/google", () => {
     vi.mocked(OAuthUserProvisioningService.provisionUser).mockResolvedValue(
       mockUser as any,
     );
-    vi.mocked(JWTService.generateAccessToken).mockReturnValue("access-token");
-    vi.mocked(JWTService.generateRefreshToken).mockReturnValue("refresh-token");
+    vi.mocked(JWTService.generateAccessToken).mockResolvedValue("access-token");
+    vi.mocked(JWTService.generateRefreshToken).mockResolvedValue("refresh-token");
     vi.mocked(SessionService.createSession).mockResolvedValue({
       id: "sess-1",
       userId: "u1",

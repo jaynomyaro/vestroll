@@ -89,10 +89,10 @@ export class GoogleOAuthService {
     const lastName = nameParts.slice(1).join(" ") || payload.family_name || "";
 
     return {
-      email: payload.email,
+      email: payload.email!,
       firstName: firstName || "User",
       lastName: lastName || "",
-      oauthId: payload.sub,
+      oauthId: payload.sub!,
     };
   }
 }
