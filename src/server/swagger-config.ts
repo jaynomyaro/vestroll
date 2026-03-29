@@ -1,6 +1,6 @@
 import swaggerJSDoc from "swagger-jsdoc";
 
-const options: swaggerJSDoc.Options = {
+export const swaggerOptions: swaggerJSDoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
@@ -25,8 +25,17 @@ const options: swaggerJSDoc.Options = {
     },
   },
 
-  apis: ["./src/app/api/v1/**/*.ts"],
+  apis: [
+    "./src/app/api/v1/**/*.ts",
+    "!./src/app/api/v1/**/*.test.ts",
+    "!./src/app/api/v1/**/*.spec.ts",
+  ],
 };
 
-export const swaggerSpec = swaggerJSDoc(options);
+export function createSwaggerSpec() {
+  return swaggerJSDoc(swaggerOptions);
+}
+
+export const swaggerSpec = createSwaggerSpec();
+
 

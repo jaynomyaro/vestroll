@@ -1,8 +1,10 @@
-import { eq } from "drizzle-orm";
-import { db, users, userStatusEnum } from "../db";
+import { eq, sql } from "drizzle-orm";
+import { db, users, userStatusEnum, signerTypeEnum } from "../db";
 import { AuditLogService } from "./audit-log.service";
+import type { Transaction } from "drizzle-orm/postgres-core";
 
 export type UserStatus = (typeof userStatusEnum.enumValues)[number];
+export type SignerType = (typeof signerTypeEnum.enumValues)[number];
 
 // Whitelist of allowed domains for avatar URLs
 const ALLOWED_AVATAR_DOMAINS = [
@@ -13,7 +15,7 @@ const ALLOWED_AVATAR_DOMAINS = [
 ];
 
 // Validate avatar URL domain against whitelist
-function validateAvatarUrl(avatarUrl: string | undefined): void {
+function validateAvatarUrl(avatarUrl: string | null | undefined): void {
   if (!avatarUrl) return; // Allow null/undefined values
 
   try {
@@ -39,26 +41,36 @@ function validateAvatarUrl(avatarUrl: string | undefined): void {
 
 export class UserService {
   static async findByEmail(email: string) {
+    const normalizedEmail = email.toLowerCase().trim();
+
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.email, email))
+      .where(sql`lower(${users.email}) = ${normalizedEmail}`)
       .limit(1);
 
     return user || null;
   }
 
-  static async create(data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  }) {
-    const [user] = await db
+  static async create(
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    },
+    tx?: Transaction,
+  ) {
+    const normalizedEmail = data.email.toLowerCase().trim();
+
+    // Use provided transaction context or create a new transaction
+    const executor = tx || db;
+
+    const [user] = await executor
       .insert(users)
       .values({
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email,
+        email: normalizedEmail,
         status: "pending_verification",
       })
       .returning();
@@ -81,6 +93,10 @@ export class UserService {
     data: Partial<typeof users.$inferInsert>,
     metadata?: { ipAddress?: string; userAgent?: string },
   ) {
+    if (data.avatarUrl !== undefined) {
+      validateAvatarUrl(data.avatarUrl);
+    }
+
     const oldUser = await this.findById(userId);
     if (!oldUser) return null;
 
