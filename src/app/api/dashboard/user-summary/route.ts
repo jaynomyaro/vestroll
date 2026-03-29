@@ -10,7 +10,7 @@ import { DashboardService } from "@/server/services/dashboard.service";
  *   get:
  *     summary: Get user summary
  *     description: Retrieve identity details for the authenticated user to populate dashboard header greeting and profile previews
- *     tags: [Dashboard]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     responses:

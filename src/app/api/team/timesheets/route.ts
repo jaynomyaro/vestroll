@@ -11,7 +11,7 @@ import { GetTimesheetsQuerySchema } from "@/server/validations/timesheet.schema"
  *   get:
  *     summary: List timesheets
  *     description: Retrieve all hourly logs submitted by contractors for the authenticated user's organization
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     parameters:

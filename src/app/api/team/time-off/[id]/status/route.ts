@@ -17,7 +17,7 @@ import { TimeOffService } from "@/server/services/time-off.service";
  *   patch:
  *     summary: Update time-off request status
  *     description: Allows administrators or managers to approve or reject a time-off request
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     parameters:

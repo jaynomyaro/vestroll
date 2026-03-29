@@ -43,10 +43,33 @@ export const swaggerOptions: swaggerJSDoc.Options = {
         },
       },
     },
+    tags: [
+      {
+        name: "Auth",
+        description:
+          "User authentication, sessions, and security (including 2FA)",
+      },
+      {
+        name: "Finance",
+        description:
+          "Wallet management, wallet-to-wallet transactions, and financial settings",
+      },
+      {
+        name: "Payroll",
+        description:
+          "Employee management, timesheets, time-off requests, and expense tracking",
+      },
+      {
+        name: "General",
+        description:
+          "General endpoints like Dashboard, Company, and KYB status",
+      },
+    ],
   },
 
   apis: [
     "./src/app/api/**/*.ts",
+    "./src/server/validations/*.ts",
     "!./src/app/api/**/*.test.ts",
     "!./src/app/api/**/*.spec.ts",
   ],

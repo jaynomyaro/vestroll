@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { JWTService } from "@/server/services/jwt.service";
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? [];
   const origin = req.headers.get("origin");
 
@@ -20,11 +21,11 @@ export function middleware(req: NextRequest) {
       response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set(
         "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        "GET, POST, PUT, DELETE, OPTIONS, PATCH",
       );
       response.headers.set(
         "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-Requested-With"
+        "Content-Type, Authorization, X-Requested-With",
       );
       response.headers.set("Access-Control-Max-Age", "86400");
       return response;
@@ -37,8 +38,8 @@ export function middleware(req: NextRequest) {
 
   if (token) {
     try {
-      const { userId } = JWTService.verifyAccessToken(token);
-      updateLastActive(userId);
+      await JWTService.verifyAccessToken(token);
+      // Removed updateLastActive(userId) because it uses standard PG driver which is not edge-compatible.
     } catch {
       // invalid/expired token — let the route handler deal with it
     }

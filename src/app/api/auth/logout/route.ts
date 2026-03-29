@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
         if (validation.success && validation.data.refreshToken) {
           refreshToken = validation.data.refreshToken;
         }
-      } catch {
+      } catch {
+
       }
     }
 

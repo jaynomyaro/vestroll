@@ -10,7 +10,7 @@ import { OnboardingService } from "@/server/services/onboarding.service";
  *   get:
  *     summary: Get onboarding status
  *     description: Retrieve the organization's onboarding progress across email verification, company profile, KYB verification, and wallet funding
- *     tags: [Dashboard]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     responses:

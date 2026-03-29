@@ -13,7 +13,7 @@ import { withKybRateLimit } from "@/server/services/rate-limit.service";
  *   post:
  *     summary: Submit KYB documents
  *     description: Upload business registration documents for KYB verification
- *     tags: [KYB]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     requestBody:

@@ -11,7 +11,7 @@ import { UpdateTimesheetStatusSchema } from "@/server/validations/timesheet.sche
  *   patch:
  *     summary: Update timesheet status
  *     description: Approve or reject a submitted timesheet. Approved timesheets are locked and queued for payroll processing.
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     parameters:

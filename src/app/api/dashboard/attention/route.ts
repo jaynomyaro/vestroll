@@ -10,7 +10,7 @@ import { AttentionService } from "@/server/services/attention.service";
  *   get:
  *     summary: Get required attention items
  *     description: Retrieve counts of items needing immediate action across contracts, milestones, invoices, timesheets, expenses, and time-off requests
- *     tags: [Dashboard]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     responses:

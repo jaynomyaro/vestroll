@@ -30,7 +30,9 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = this.constructor.name;
-    Error.captureStackTrace(this, this.constructor);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
 
     const defaults = PROBLEM_TYPE_MAP[statusCode] ?? {
       type: "about:blank",
@@ -64,7 +66,13 @@ export class ValidationError extends AppError {
     message: string = "Validation failed",
     errors: Record<string, unknown> | null = null,
   ) {
-    super(message, 400, errors, "/problems/validation-error", "Validation Error");
+    super(
+      message,
+      400,
+      errors,
+      "/problems/validation-error",
+      "Validation Error",
+    );
   }
 }
 
