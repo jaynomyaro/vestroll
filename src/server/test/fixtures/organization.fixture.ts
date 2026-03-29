@@ -24,16 +24,6 @@ type CreateOrgResult = {
 
 export const isDbAvailable = () => !!process.env.DATABASE_URL;
 
-/**
- * createTestOrganization
- * - Creates an `organizations` row and optionally an `organization_wallets` row.
- * - Runs inside a single DB transaction.
- * - Fails fast if the DB is not available or on SQL errors (no retries).
- *
- * NOTE: This fixture intentionally does not create `teams` / `roles` —
- * this codebase does not currently define those tables in the schema. If
- * your project adds `teams`/`roles`, extend this file accordingly.
- */
 export async function createTestOrganization(
   opts: CreateOrgOpts = {},
 ): Promise<CreateOrgResult> {
@@ -107,16 +97,3 @@ export async function createTestOrganization(
     throw new Error(message);
   }
 }
-
-/**
- * Example usage (in a test file):
- *
- * const run = isDbAvailable() ? describe : describe.skip;
- * run('org fixture', () => {
- *   it('creates org + wallet', async () => {
- *     const { organization, wallet } = await createTestOrganization({ withWallet: true, fakerSeed: 42 });
- *     expect(organization).toBeDefined();
- *     expect(wallet).toBeDefined();
- *   });
- * });
- */
