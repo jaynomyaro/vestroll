@@ -141,9 +141,9 @@ export default function Page() {
 
   /**
    * 3-step logo upload:
-   *  1. GET /api/organizations/logo-upload-url → { signedUrl, key }
+   *  1. GET /api/v1/organizations/logo-upload-url → { signedUrl, key }
    *  2. PUT blob → S3 via signedUrl
-   *  3. PATCH /api/organizations/logo { key } → { logoUrl }
+   *  3. PATCH /api/v1/organizations/logo { key } → { logoUrl }
    *
    * Optimistic update: show the local blob URL immediately while upload runs.
    */
@@ -172,7 +172,7 @@ export default function Page() {
     try {
       // Step 1 — get presigned S3 upload URL
       const urlRes = await fetch(
-        `/api/organizations/logo-upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`,
+        `/api/v1/organizations/logo-upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`,
         { headers: authHeaders },
       );
       if (!urlRes.ok) throw new Error("Failed to get upload URL");
@@ -188,7 +188,7 @@ export default function Page() {
       if (!s3Res.ok) throw new Error("Failed to upload logo to storage");
 
       // Step 3 — save the S3 key to the database
-      const patchRes = await fetch("/api/organizations/logo", {
+      const patchRes = await fetch("/api/v1/organizations/logo", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ key }),
@@ -477,4 +477,5 @@ export default function Page() {
     </>
   );
 }
+
 

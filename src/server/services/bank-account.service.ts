@@ -308,6 +308,7 @@ class BankAccountService {
       "405000": "HSBC Bank",
       "600000": "Lloyds Bank",
       "770000": "Lloyds Bank",
+      "331": "Lloyds Bank",
     };
     return sortCodeBanks[sortCode] || "Unknown Bank";
   }

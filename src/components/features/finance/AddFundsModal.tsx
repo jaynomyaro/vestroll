@@ -53,7 +53,7 @@ export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
     setError(null);
 
     try {
-      const response = await fetch("/api/finance/wallet", {
+      const response = await fetch("/api/v1/finance/wallet", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
     setError(null);
 
     try {
-      const response = await fetch("/api/finance/wallet", {
+      const response = await fetch("/api/v1/finance/wallet", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -248,3 +248,4 @@ export function AddFundsModal({ open, onOpenChange }: AddFundsModalProps) {
     </Dialog>
   );
 }
+

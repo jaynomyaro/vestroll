@@ -111,7 +111,7 @@ export function Step3PaymentDetails({ defaultValues, onNext, onBack }: Props) {
     setVerification({ status: "loading" });
 
     try {
-      const res = await fetch("/api/accounts/validate", {
+      const res = await fetch("/api/v1/accounts/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bankName: selectedBank, accountNumber }),
@@ -300,3 +300,4 @@ export function Step3PaymentDetails({ defaultValues, onNext, onBack }: Props) {
     </form>
   );
 }
+

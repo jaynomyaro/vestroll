@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { EmailVerificationService } from "./email-verification.service";
 import { UserService } from "./user.service";
 import { OTPService } from "./otp.service";
 import { db, emailVerifications, users } from "../db";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../utils/errors";
-type UserLookupResult = Awaited<ReturnType<typeof UserService.findByEmail>>;
 
 vi.mock("./user.service");
 vi.mock("./otp.service");
@@ -49,7 +49,7 @@ describe("EmailVerificationService", () => {
 
   describe("verifyEmail", () => {
     it("should throw NotFoundError if user does not exist", async () => {
-      vi.mocked(UserService.findByEmail).mockResolvedValue(null);
+      vi.mocked(UserService.findByEmail).mockResolvedValue(null as any);
       const promise = EmailVerificationService.verifyEmail("nonexistent@example.com", "123456");
       await expect(promise).rejects.toThrowError(NotFoundError);
       await expect(promise).rejects.toThrowError("User not found");
@@ -58,7 +58,7 @@ describe("EmailVerificationService", () => {
     it("should throw BadRequestError if user is already verified", async () => {
       const activeUser = { ...mockUser, status: "active" as const };
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        activeUser as UserLookupResult,
+        activeUser as any,
       );
 
       await expect(
@@ -71,7 +71,7 @@ describe("EmailVerificationService", () => {
 
     it("should throw NotFoundError if no verification record exists", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       
       const mockSelect = vi.fn().mockReturnValue({
@@ -95,7 +95,7 @@ describe("EmailVerificationService", () => {
 
     it("should throw ForbiddenError if max attempts exceeded", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       
       const lockedRecord = { ...mockVerificationRecord, attempts: 5 };
@@ -120,7 +120,7 @@ describe("EmailVerificationService", () => {
 
     it("should throw BadRequestError if OTP is expired", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       
       const expiredRecord = { 
@@ -148,7 +148,7 @@ describe("EmailVerificationService", () => {
 
     it("should increment attempts and throw BadRequestError for invalid OTP", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       vi.mocked(OTPService.verifyOTP).mockResolvedValue(false);
       
@@ -182,7 +182,7 @@ describe("EmailVerificationService", () => {
 
     it("should throw ForbiddenError on 5th failed attempt", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       vi.mocked(OTPService.verifyOTP).mockResolvedValue(false);
       
@@ -215,7 +215,7 @@ describe("EmailVerificationService", () => {
 
     it("should successfully verify email with valid OTP", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       vi.mocked(OTPService.verifyOTP).mockResolvedValue(true);
       
@@ -259,7 +259,7 @@ describe("EmailVerificationService", () => {
 
     it("should call OTPService.verifyOTP with correct parameters", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       vi.mocked(OTPService.verifyOTP).mockResolvedValue(true);
       
@@ -295,7 +295,7 @@ describe("EmailVerificationService", () => {
 
     it("should show singular 'attempt' when 1 attempt remaining", async () => {
       vi.mocked(UserService.findByEmail).mockResolvedValue(
-        mockUser as UserLookupResult,
+        mockUser as any,
       );
       vi.mocked(OTPService.verifyOTP).mockResolvedValue(false);
       

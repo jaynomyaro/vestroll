@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { db, users, userStatusEnum, signerTypeEnum } from "../db";
 import { AuditLogService } from "./audit-log.service";
-import type { Transaction } from "drizzle-orm/postgres-core";
+import type { PgTransaction } from "drizzle-orm/pg-core";
 
 export type UserStatus = (typeof userStatusEnum.enumValues)[number];
 export type SignerType = (typeof signerTypeEnum.enumValues)[number];
@@ -58,7 +58,8 @@ export class UserService {
       lastName: string;
       email: string;
     },
-    tx?: Transaction,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tx?: PgTransaction<any, any, any>,
   ) {
     const normalizedEmail = data.email.toLowerCase().trim();
 
@@ -99,6 +100,11 @@ export class UserService {
 
     const oldUser = await this.findById(userId);
     if (!oldUser) return null;
+
+    // Validate avatar URL if provided
+    if (data.avatarUrl !== undefined && data.avatarUrl !== null) {
+      validateAvatarUrl(data.avatarUrl);
+    }
 
     const [updatedUser] = await db
       .update(users)

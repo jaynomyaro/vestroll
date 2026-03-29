@@ -226,7 +226,7 @@ export class MonnifyProvider implements PaymentProvider {
     const token = await this.authenticate();
 
     const response = await fetch(
-      `${this.config.baseUrl}/api/v2/transactions/${reference}`,
+      `${this.config.baseUrl}/api/v1/v2/transactions/${reference}`,
       {
         method: "GET",
         headers: {
@@ -298,3 +298,5 @@ export class MonnifyProvider implements PaymentProvider {
     return new InternalServerError(msg);
   }
 }
+
+

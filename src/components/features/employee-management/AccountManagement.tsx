@@ -55,7 +55,7 @@ export function AccountManagement({ employeeId, employeeName }: AccountManagemen
     setError(null);
     
     try {
-      const response = await fetch(`/api/accounts?employeeId=${employeeId}`);
+      const response = await fetch(`/api/v1/accounts?employeeId=${employeeId}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -86,7 +86,7 @@ export function AccountManagement({ employeeId, employeeName }: AccountManagemen
     setError(null);
     
     try {
-      const response = await fetch("/api/accounts", {
+      const response = await fetch("/api/v1/accounts", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +111,7 @@ export function AccountManagement({ employeeId, employeeName }: AccountManagemen
     setError(null);
     
     try {
-      const response = await fetch("/api/accounts", {
+      const response = await fetch("/api/v1/accounts", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +140,7 @@ export function AccountManagement({ employeeId, employeeName }: AccountManagemen
       const account = accounts.find(a => a.id === accountId);
       if (!account) throw new Error("Account not found");
 
-      const response = await fetch("/api/accounts/verify", {
+      const response = await fetch("/api/v1/accounts/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +180,7 @@ export function AccountManagement({ employeeId, employeeName }: AccountManagemen
     setError(null);
     
     try {
-      const response = await fetch(`/api/accounts/${accountId}`, {
+      const response = await fetch(`/api/v1/accounts/${accountId}`, {
         method: "DELETE",
       });
       
@@ -359,3 +359,4 @@ export function AccountManagement({ employeeId, employeeName }: AccountManagemen
     </div>
   );
 }
+

@@ -133,8 +133,8 @@ describe("MonnifyProvider", () => {
       });
 
       // auth was called only once (first fetch call)
-      const authCalls = fetchMock.mock.calls.filter(([url]: [string]) =>
-        url.includes("/auth/login")
+      const authCalls = fetchMock.mock.calls.filter((args: unknown[]) =>
+        (args[0] as string).includes("/auth/login"),
       );
       expect(authCalls).toHaveLength(1);
     });
@@ -448,9 +448,11 @@ describe("MonnifyProvider", () => {
 
       const verifyCall = fetchMock.mock.calls[1];
       expect(verifyCall[0]).toBe(
-        "https://sandbox.monnify.com/api/v2/transactions/pay-ref-001"
+        "https://sandbox.monnify.com/api/v1/v2/transactions/pay-ref-001"
       );
       expect(verifyCall[1].method).toBe("GET");
     });
   });
 });
+
+

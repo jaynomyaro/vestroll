@@ -41,7 +41,7 @@ export default function InvitationsPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/invitations");
+      const response = await fetch("/api/v1/invitations");
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -61,7 +61,7 @@ export default function InvitationsPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/invitations", {
+      const response = await fetch("/api/v1/invitations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +86,7 @@ export default function InvitationsPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/invitations/resend", {
+      const response = await fetch("/api/v1/invitations/resend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +111,7 @@ export default function InvitationsPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/invitations/delete", {
+      const response = await fetch("/api/v1/invitations/delete", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -150,3 +150,4 @@ export default function InvitationsPage() {
     </div>
   );
 }
+

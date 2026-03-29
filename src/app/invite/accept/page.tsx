@@ -81,7 +81,7 @@ export default function AcceptInvitationPage() {
 
   const fetchInvitationDetails = async (invitationToken: string) => {
     try {
-      const response = await fetch(`/api/invitations/validate?token=${invitationToken}`);
+      const response = await fetch(`/api/v1/invitations/validate?token=${invitationToken}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -102,7 +102,7 @@ export default function AcceptInvitationPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/invitations/accept", {
+      const response = await fetch("/api/v1/invitations/accept", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,7 +136,7 @@ export default function AcceptInvitationPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/invitations/decline", {
+      const response = await fetch("/api/v1/invitations/decline", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -351,3 +351,4 @@ export default function AcceptInvitationPage() {
     </div>
   );
 }
+

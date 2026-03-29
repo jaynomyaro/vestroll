@@ -10,8 +10,8 @@ export const swaggerOptions: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: "/api",
-        description: "Standard API base",
+        url: "/api/v1",
+        description: "Standard API v1 base",
       },
     ],
     components: {
@@ -68,10 +68,10 @@ export const swaggerOptions: swaggerJSDoc.Options = {
   },
 
   apis: [
-    "./src/app/api/**/*.ts",
+    "./src/app/api/v1/**/*.ts",
     "./src/server/validations/*.ts",
-    "!./src/app/api/**/*.test.ts",
-    "!./src/app/api/**/*.spec.ts",
+    "!./src/app/api/v1/**/*.test.ts",
+    "!./src/app/api/v1/**/*.spec.ts",
   ],
 };
 

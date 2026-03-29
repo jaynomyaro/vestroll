@@ -142,7 +142,7 @@ export function AccountForm({ employeeId, initialData, onSubmit, onCancel }: Acc
 
     try {
       const formData = watch();
-      const response = await fetch("/api/accounts/validate", {
+      const response = await fetch("/api/v1/accounts/validate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -461,3 +461,4 @@ export function AccountForm({ employeeId, initialData, onSubmit, onCancel }: Acc
     </Card>
   );
 }
+
