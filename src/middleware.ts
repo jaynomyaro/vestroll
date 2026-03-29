@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { JWTService } from "@/server/services/jwt.service";
-import { updateLastActive } from "@/server/middleware/update-last-active.middleware";
 
 export function middleware(req: NextRequest) {
   const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? [];
