@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { Logger } from "@/server/services/logger.service";
 
 export class WebhookService {
   static verifyMonnifySignature(rawBody: string, signature: string) {
@@ -14,7 +15,7 @@ export class WebhookService {
 
   static async logWebhookPayload(provider: string, payload: any) {
     // TODO: Replace with DB insert when webhook_audit_logs table is available
-    console.log("Webhook Audit Log:", {
+    Logger.info("Webhook Audit Log:", {
       provider,
       payload,
       receivedAt: new Date().toISOString(),
@@ -23,7 +24,7 @@ export class WebhookService {
 
   static async processSuccessfulDeposit(reference: string, amount: number) {
     // TODO: Replace with real DB logic
-    console.log("Processing successful deposit:", {
+    Logger.info("Processing successful deposit:", {
       reference,
       amount,
     });
