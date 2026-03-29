@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const cookieToken = cookieStore.get("refreshToken")?.value;
 
-    let refreshToken = cookieToken;
+    let refreshToken = cookieToken;
+
     if (!refreshToken) {
       try {
         const body = await request.json();
@@ -49,21 +50,25 @@ export async function POST(request: NextRequest) {
         if (validation.success) {
           refreshToken = validation.data.refreshToken;
         }
-      } catch {
+      } catch {
+
       }
     }
 
-    if (!refreshToken) {
+    if (!refreshToken) {
+
       return ApiResponse.error("Refresh token is required", 400);
     }
 
     const ipAddress = AuthUtils.getClientIp(request);
-    const userAgent = AuthUtils.getUserAgent(request);
+    const userAgent = AuthUtils.getUserAgent(request);
+
     const result = await TokenRefreshService.refresh(
       refreshToken,
       userAgent,
       ipAddress,
-    );
+    );
+
     const response = ApiResponse.success(
       result,
       "Token refreshed successfully",
@@ -73,16 +78,28 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict" as const,
-      path: "/",
+      path: "/",
+
+
+
+
+
+
+
+
       maxAge: 30 * 24 * 60 * 60,
-    };
+    };
+
+
     response.cookies.set("refreshToken", result.refreshToken, cookieOptions);
 
     return response;
   } catch (error) {
     if (error instanceof AppError) {
       return ApiResponse.error(error.message, error.statusCode, error.errors);
-    }
+    }
+
+
 
     console.error("Refresh route error:", error);
     return ApiResponse.error("Internal server error", 500);

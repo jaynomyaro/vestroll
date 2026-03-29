@@ -10,7 +10,7 @@ import { KybService } from "@/server/services/kyb.service";
  *   get:
  *     summary: Get KYB verification status
  *     description: Return the current state of the user's Know Your Business (KYB) verification
- *     tags: [KYB]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     responses:

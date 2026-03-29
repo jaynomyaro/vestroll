@@ -14,7 +14,7 @@ const UUID_REGEX =
  *   get:
  *     summary: Get single employee profile
  *     description: Retrieve a comprehensive profile for a specific team member, including contract details and payment history (derived from timesheets). Verifies the employee belongs to the requester's organization.
- *     tags: [Team]
+ *     tags: [Payroll]
  *     parameters:
  *       - in: path
  *         name: id

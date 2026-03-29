@@ -10,7 +10,7 @@ import { TimeOffService } from "@/server/services/time-off.service";
  *   get:
  *     summary: Get all time-off requests
  *     description: Retrieve all leave requests (Sick, Vacation, etc.) for the organization.
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     responses:

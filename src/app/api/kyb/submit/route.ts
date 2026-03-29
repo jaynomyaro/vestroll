@@ -12,7 +12,7 @@ import { ZodError } from "zod";
  *   post:
  *     summary: Submit KYB documents
  *     description: Upload business registration documents for KYB verification
- *     tags: [KYB]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     requestBody:

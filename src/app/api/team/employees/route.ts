@@ -12,7 +12,7 @@ import { TeamService } from "@/server/services/team.service";
  *   get:
  *     summary: List employees
  *     description: Get a paginated list of employees for the authenticated user's organization
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     parameters:

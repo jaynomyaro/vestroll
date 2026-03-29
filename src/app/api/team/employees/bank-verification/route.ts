@@ -11,7 +11,7 @@ import { BankVerificationSchema } from "@/server/validations/bank-verification.s
  *   post:
  *     summary: Verify bank account
  *     description: Validates a bank account number against the selected provider and returns the account holder name
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     requestBody:

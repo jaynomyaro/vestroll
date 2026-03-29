@@ -10,7 +10,7 @@ import { CompanyService } from "@/server/services/company.service";
  *   get:
  *     summary: Get company profile
  *     description: Return the authenticated user's organization legal and contact details
- *     tags: [Company]
+ *     tags: [General]
  *     security:
  *       - bearerAuth: []
  *     responses:

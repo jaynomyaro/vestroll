@@ -16,7 +16,7 @@ import { UpdateExpenseStatusSchema } from "@/server/validations/expense-status.s
  * /team/expenses/{id}/status:
  *   patch:
  *     summary: Approve or reject an expense submission
- *     tags: [Team]
+ *     tags: [Payroll]
  *     security:
  *       - bearerAuth: []
  *     parameters:
