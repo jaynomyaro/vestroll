@@ -12,13 +12,12 @@ const run = process.env.DATABASE_URL ? describe : describe.skip;
 
 run("Finance Wallet funding flow (simulated deposit)", () => {
   beforeEach(async () => {
-    process.env.NODE_ENV = "test";
     await resetDatabase();
   });
 
   it("simulates a deposit and verifies funded flag and fundedAt timestamp", async () => {
     const orgInsertRes: any = await db.execute(
-      sql`INSERT INTO organizations (name) VALUES (${"Test Org"}) RETURNING id`,
+      sql`INSERT INTO organizations (name, slug) VALUES (${"Test Org"}, ${"test-org"}) RETURNING id`,
     );
     const orgId = orgInsertRes.rows[0].id as string;
 
