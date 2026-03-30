@@ -7,8 +7,8 @@ import {
   biometricLogs,
   passkeyRegistrationChallenges,
 } from "../db";
-import pc from "picocolors";
 import crypto from "crypto";
+import { generateSlug } from "../utils/slug";
 import { AuditLogService } from "./audit-log.service";
 import { OTP_EXPIRATION_MINUTES } from "./email-verification.service";
 import { UserService } from "./user.service";
@@ -68,10 +68,12 @@ export class AuthService {
       let organizationId: string | undefined;
 
       if (companyName) {
+        const slug = generateSlug(companyName);
         const [org] = await tx
           .insert(organizations)
           .values({
             name: companyName,
+            slug,
             industry: companyIndustry,
             registeredCountry: headquarterCountry,
           })
@@ -88,7 +90,7 @@ export class AuthService {
           email: businessEmail.toLowerCase().trim(),
           passwordHash,
           organizationName: companyName,
-          organizationId: organizationId as any,
+          organizationId: organizationId ?? null,
           role: accountType === "employer" ? "admin" : "employee",
           status: "pending_verification",
           signerType: "Email",

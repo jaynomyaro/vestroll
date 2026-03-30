@@ -1,21 +1,46 @@
+import { db } from "../db";
 import {
-  Keypair,
-  Networks,
-  TransactionBuilder,
-  Transaction,
-  FeeBumpTransaction,
-  Operation,
-  Asset,
-  Contract,
-  BASE_FEE,
-  xdr,
-  nativeToScVal,
-  scValToNative,
   Address,
+  Asset,
+  BASE_FEE,
+  Contract,
+  FeeBumpTransaction,
+  Keypair,
+  nativeToScVal,
+  Networks,
+  Operation,
+  scValToNative,
+  Transaction,
+  TransactionBuilder,
+  xdr,
 } from "@stellar/stellar-sdk";
-import { Server as RpcServer, Api } from "@stellar/stellar-sdk/rpc";
+import { Api, Server as RpcServer } from "@stellar/stellar-sdk/rpc";
 import { Logger } from "./logger.service";
-import { ServiceDiscovery, EnvServiceDiscovery } from "@/server/utils/service-discovery";
+import {
+  EnvServiceDiscovery,
+  ServiceDiscovery,
+} from "@/server/utils/service-discovery";
+import { signerAudits } from "@/server/db/schema";
+import {
+  SimulationFailedError,
+  TransactionRejectedError,
+  wrapBlockchainError,
+} from "@/server/utils/errors/blockchain-error";
+
+export interface GetContractEventsParams {
+  contractId?: string;
+  topics?: string[][];
+  fromLedger?: number;
+  limit?: number;
+}
+
+export interface ContractEvent {
+  id: string;
+  ledger: number;
+  contractId: string;
+  topics: unknown[];
+  value: unknown;
+}
 
 type NetworkName = "testnet" | "mainnet" | "futurenet";
 
@@ -88,9 +113,7 @@ export class BlockchainService {
   ) {
     this.networkConfig = {
       ...NETWORK_CONFIGS[network],
-      rpcUrl: this.serviceDiscovery.getRpcUrl(
-        NETWORK_CONFIGS[network].rpcUrl,
-      ),
+      rpcUrl: this.serviceDiscovery.getRpcUrl(NETWORK_CONFIGS[network].rpcUrl),
       horizonUrl: this.serviceDiscovery.getHorizonUrl(
         NETWORK_CONFIGS[network].horizonUrl,
       ),
@@ -115,7 +138,7 @@ export class BlockchainService {
         publicKey,
         error: String(error),
       });
-      throw error;
+      throw wrapBlockchainError(error);
     }
   }
 
@@ -153,7 +176,7 @@ export class BlockchainService {
         publicKey,
         error: String(error),
       });
-      throw error;
+      throw wrapBlockchainError(error);
     }
   }
 
@@ -209,11 +232,16 @@ export class BlockchainService {
     );
 
     if (params.memo) {
+      const memoByteLength = Buffer.byteLength(params.memo, "utf8");
+      if (memoByteLength > 28) {
+        throw new Error(
+          `Memo text exceeds maximum length of 28 bytes (got ${memoByteLength} bytes). ` +
+            `Stellar protocol limits text memos to 28 bytes.`,
+        );
+      }
+
       builder.addMemo(
-        new (await import("@stellar/stellar-sdk")).Memo(
-          "text",
-          params.memo,
-        ),
+        new (await import("@stellar/stellar-sdk")).Memo("text", params.memo),
       );
     }
 
@@ -243,9 +271,7 @@ export class BlockchainService {
       builder.addOperation(op);
     }
 
-    const tx = builder
-      .setTimeout(params.timeboundSeconds ?? 180)
-      .build();
+    const tx = builder.setTimeout(params.timeboundSeconds ?? 180).build();
 
     return {
       xdr: tx.toXDR(),
@@ -254,22 +280,46 @@ export class BlockchainService {
     };
   }
 
-  signTransaction(
-    xdrEnvelope: string,
-    signerSecret: string,
-  ): string {
+  private validateNetwork(passphrase?: string): void {
+    if (passphrase && passphrase !== this.networkConfig.networkPassphrase) {
+      throw new Error(
+        `Cross-network transaction detected: envelope is for "${passphrase}" but service is configured for "${this.networkConfig.networkPassphrase}"`,
+      );
+    }
+  }
+
+  signTransaction(input: string | TransactionXdr, signerSecret: string): string {
+    const xdrEnvelope = typeof input === "string" ? input : input.xdr;
+    this.validateNetwork(typeof input === "string" ? undefined : input.networkPassphrase);
+
     const tx = TransactionBuilder.fromXDR(
       xdrEnvelope,
       this.networkConfig.networkPassphrase,
-    );
+    ) as Transaction;
     const keypair = Keypair.fromSecret(signerSecret);
     tx.sign(keypair);
+
+    const hash = tx.hash().toString("hex");
+    db.insert(signerAudits)
+      .values({
+        signerPublicKey: keypair.publicKey(),
+        transactionHash: hash,
+      })
+      .catch((error) => {
+        Logger.error("Failed to record signer audit trail", {
+          error: String(error),
+          transactionHash: hash,
+          signerPublicKey: keypair.publicKey(),
+        });
+      });
+
     return tx.toXDR();
   }
 
-  async simulateTransaction(
-    txXdr: string,
-  ): Promise<SimulationResult> {
+  async simulateTransaction(input: string | TransactionXdr): Promise<SimulationResult> {
+    const txXdr = typeof input === "string" ? input : input.xdr;
+    this.validateNetwork(typeof input === "string" ? undefined : input.networkPassphrase);
+
     const tx = TransactionBuilder.fromXDR(
       txXdr,
       this.networkConfig.networkPassphrase,
@@ -281,7 +331,10 @@ export class BlockchainService {
       Logger.error("Transaction simulation failed", {
         error: simResponse.error,
       });
-      throw new Error(`Simulation error: ${simResponse.error}`);
+      throw new SimulationFailedError(
+        `Simulation error: ${simResponse.error}`,
+        simResponse.error,
+      );
     }
 
     const successResponse =
@@ -291,12 +344,17 @@ export class BlockchainService {
       transactionXdr: txXdr,
       minResourceFee: successResponse.minResourceFee ?? "0",
       result: successResponse.result,
-      events: successResponse.events.map((e: xdr.DiagnosticEvent) => e.toXDR("base64")),
+      events: successResponse.events.map((e: xdr.DiagnosticEvent) =>
+        e.toXDR("base64"),
+      ),
       latestLedger: successResponse.latestLedger,
     };
   }
 
-  async prepareTransaction(txXdr: string): Promise<string> {
+  async prepareTransaction(input: string | TransactionXdr): Promise<string> {
+    const txXdr = typeof input === "string" ? input : input.xdr;
+    this.validateNetwork(typeof input === "string" ? undefined : input.networkPassphrase);
+
     const tx = TransactionBuilder.fromXDR(
       txXdr,
       this.networkConfig.networkPassphrase,
@@ -306,13 +364,29 @@ export class BlockchainService {
     return prepared.toXDR();
   }
 
-  async submitTransaction(
-    signedXdr: string,
-  ): Promise<SubmissionResult> {
+  async submitTransaction(input: string | TransactionXdr): Promise<SubmissionResult> {
+    const signedXdr = typeof input === "string" ? input : input.xdr;
+    this.validateNetwork(typeof input === "string" ? undefined : input.networkPassphrase);
+
     const tx = TransactionBuilder.fromXDR(
       signedXdr,
       this.networkConfig.networkPassphrase,
     ) as Transaction | FeeBumpTransaction;
+
+    // Extract hash from the XDR to use as the idempotency key
+    const hash = tx.hash().toString("hex");
+
+    // ── Idempotency check: return cached result if already submitted ──
+    const { TransactionIdempotencyCache } = await import(
+      "../utils/transaction-idempotency"
+    );
+    const cached = await TransactionIdempotencyCache.has(hash);
+    if (cached) {
+      Logger.info("Duplicate transaction detected — returning cached result", {
+        hash,
+      });
+      return cached;
+    }
 
     const sendResponse = await this.rpcServer.sendTransaction(tx);
 
@@ -321,8 +395,10 @@ export class BlockchainService {
         status: sendResponse.status,
         hash: sendResponse.hash,
       });
-      throw new Error(
+      throw new TransactionRejectedError(
         `Transaction was not accepted: ${JSON.stringify(sendResponse)}`,
+        sendResponse.hash,
+        sendResponse.status,
       );
     }
 
@@ -339,19 +415,65 @@ export class BlockchainService {
         status: finalResponse.status,
         hash: sendResponse.hash,
       });
-      throw new Error(
+      throw new TransactionRejectedError(
         `Transaction failed with status: ${finalResponse.status}`,
+        sendResponse.hash,
+        finalResponse.status,
       );
     }
 
-    const successResp =
-      finalResponse as Api.GetSuccessfulTransactionResponse;
+    const successResp = finalResponse as Api.GetSuccessfulTransactionResponse;
 
-    return {
+    const result: SubmissionResult = {
       hash: sendResponse.hash,
       status: finalResponse.status,
       ledger: successResp.ledger,
       resultXdr: successResp.resultXdr?.toXDR("base64"),
+    };
+
+    // ── Cache the result to prevent re-submission ──
+    await TransactionIdempotencyCache.set(hash, result);
+
+    return result;
+  }
+
+  async buildFeeBumpXdr(params: {
+    innerTxXdr: string | TransactionXdr;
+    feeSourceSecret: string;
+    baseFee?: number | string;
+  }): Promise<TransactionXdr> {
+    const feeSourceKeypair = Keypair.fromSecret(params.feeSourceSecret);
+    
+    const innerXdr = typeof params.innerTxXdr === "string" ? params.innerTxXdr : params.innerTxXdr.xdr;
+    this.validateNetwork(typeof params.innerTxXdr === "string" ? undefined : params.innerTxXdr.networkPassphrase);
+
+    let innerTx: Transaction | FeeBumpTransaction;
+    try {
+      innerTx = TransactionBuilder.fromXDR(
+        innerXdr,
+        this.networkConfig.networkPassphrase,
+      );
+    } catch (error) {
+      throw new Error(
+        `Invalid inner transaction XDR: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    if (!(innerTx instanceof Transaction)) {
+      throw new Error("Inner transaction must be a Transaction instance");
+    }
+
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      feeSourceKeypair.publicKey(),
+      params.baseFee?.toString() ?? BASE_FEE,
+      innerTx,
+      this.networkConfig.networkPassphrase,
+    );
+
+    return {
+      xdr: feeBump.toXDR(),
+      hash: feeBump.hash().toString("hex"),
+      networkPassphrase: this.networkConfig.networkPassphrase,
     };
   }
 
@@ -402,9 +524,15 @@ export class BlockchainService {
     return this.rpcServer.getLatestLedger();
   }
 
-  async getLedgerHealth(): Promise<LedgerHealth> {
+  private async fetchHorizonLedger(params: {
+    path: string;
+    missingDataMessage: string;
+  }): Promise<{
+    sequence: number;
+    closedAtMs: number;
+  }> {
     const response = await fetch(
-      `${this.networkConfig.horizonUrl}/ledgers?order=desc&limit=1`,
+      `${this.networkConfig.horizonUrl}${params.path}`,
     );
 
     if (!response.ok) {
@@ -413,32 +541,56 @@ export class BlockchainService {
       );
     }
 
-    const data = (await response.json()) as {
-      _embedded?: {
-        records?: Array<{
-          sequence: number | string;
-          closed_at: string;
-        }>;
-      };
-    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = (await response.json()) as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ledgerRecord = data._embedded ? (data._embedded as any).records?.[0] : data;
 
-    const latestLedger = data._embedded?.records?.[0];
-
-    if (!latestLedger?.closed_at || latestLedger.sequence == null) {
-      throw new Error("Horizon response missing latest ledger data");
+    if (!ledgerRecord?.closed_at || ledgerRecord.sequence == null) {
+      throw new Error(params.missingDataMessage);
     }
 
-    const closedAtMs = Date.parse(latestLedger.closed_at);
+    const closedAtMs = Date.parse(ledgerRecord.closed_at);
 
     if (Number.isNaN(closedAtMs)) {
       throw new Error("Horizon returned an invalid ledger close time");
     }
 
     return {
-      ledger: Number(latestLedger.sequence),
+      sequence: Number(ledgerRecord.sequence),
+      closedAtMs,
+    };
+  }
+
+  async getLedgerHealth(): Promise<LedgerHealth> {
+    const rpcLatestLedger = await this.rpcServer.getLatestLedger();
+    const localLedgerSequence = Number(rpcLatestLedger?.sequence);
+
+    if (Number.isNaN(localLedgerSequence)) {
+      throw new Error("RPC response missing latest ledger sequence");
+    }
+
+    const networkTipLedger = await this.fetchHorizonLedger({
+      path: "/ledgers?order=desc&limit=1",
+      missingDataMessage: "Horizon response missing latest network ledger data",
+    });
+
+    const localLedger =
+      networkTipLedger.sequence === localLedgerSequence
+        ? networkTipLedger
+        : await this.fetchHorizonLedger({
+            path: `/ledgers/${localLedgerSequence}`,
+            missingDataMessage:
+              "Horizon response missing local ledger data",
+          });
+
+    return {
+      ledger: localLedgerSequence,
       ledgerAgeSeconds: Math.max(
         0,
-        Math.floor((Date.now() - closedAtMs) / 1000),
+        Math.floor(
+          (networkTipLedger.closedAtMs - localLedger.closedAtMs) / 1000,
+        ),
       ),
     };
   }
@@ -449,6 +601,66 @@ export class BlockchainService {
       return health.status === "healthy";
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Fetches specific diagnostic events from the Stellar RPC.
+   *
+   * @param params - Filtering parameters for events
+   * @returns A promise that resolves to a typed array of ContractEvent
+   *
+   * @example
+   * ```ts
+   * const events = await blockchainService.getContractEvents({
+   *   contractId: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+   *   fromLedger: 1000
+   * });
+   * ```
+   */
+  async getContractEvents(
+    params: GetContractEventsParams,
+  ): Promise<ContractEvent[]> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const requestParams: any = {
+        filters: params.contractId
+          ? [
+              {
+                contractIds: [params.contractId],
+                topics: params.topics,
+              },
+            ]
+          : [],
+        limit: params.limit,
+      };
+      
+      if (params.fromLedger) {
+        requestParams.startLedger = params.fromLedger;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response = await (this.rpcServer as any).getEvents(requestParams);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (response as any).events.map((event: any) => ({
+        id: event.id,
+        ledger: event.ledger,
+        contractId: typeof event.contractId === "string" ? event.contractId : event.contractId?.toString() || "",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        topics: event.topic.map((t: any) => scValToNative(t)),
+        value: scValToNative(event.value),
+      }));
+    } catch (error) {
+      Logger.error("Failed to fetch contract events", {
+        params,
+        error: String(error),
+      });
+      throw new Error(
+        `Failed to fetch contract events: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   }
 }

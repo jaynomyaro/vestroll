@@ -1,10 +1,10 @@
 import { eq, sql } from "drizzle-orm";
 import { db, users, userStatusEnum, signerTypeEnum } from "../db";
 import { AuditLogService } from "./audit-log.service";
+import type { PgTransaction } from "drizzle-orm/pg-core";
 
 export type UserStatus = (typeof userStatusEnum.enumValues)[number];
 export type SignerType = (typeof signerTypeEnum.enumValues)[number];
-
 
 // Whitelist of allowed domains for avatar URLs
 const ALLOWED_AVATAR_DOMAINS = [
@@ -52,14 +52,21 @@ export class UserService {
     return user || null;
   }
 
-  static async create(data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-  }) {
+  static async create(
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tx?: PgTransaction<any, any, any>,
+  ) {
     const normalizedEmail = data.email.toLowerCase().trim();
 
-    const [user] = await db
+    // Use provided transaction context or create a new transaction
+    const executor = tx || db;
+
+    const [user] = await executor
       .insert(users)
       .values({
         firstName: data.firstName,
@@ -93,6 +100,11 @@ export class UserService {
 
     const oldUser = await this.findById(userId);
     if (!oldUser) return null;
+
+    // Validate avatar URL if provided
+    if (data.avatarUrl !== undefined && data.avatarUrl !== null) {
+      validateAvatarUrl(data.avatarUrl);
+    }
 
     const [updatedUser] = await db
       .update(users)

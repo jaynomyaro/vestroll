@@ -1,6 +1,6 @@
 import swaggerJSDoc from "swagger-jsdoc";
 
-const options: swaggerJSDoc.Options = {
+export const swaggerOptions: swaggerJSDoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
@@ -10,8 +10,8 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: "/api",
-        description: "Standard API base",
+        url: "/api/v1",
+        description: "Standard API v1 base",
       },
     ],
     components: {
@@ -22,10 +22,61 @@ const options: swaggerJSDoc.Options = {
           bearerFormat: "JWT",
         },
       },
+      schemas: {
+        UnauthorizedError: {
+          type: "object",
+          properties: {
+            success: {
+              type: "boolean",
+              example: false,
+            },
+            message: {
+              type: "string",
+              example: "Authentication required",
+            },
+            errors: {
+              type: "object",
+              nullable: true,
+              example: null,
+            },
+          },
+        },
+      },
     },
+    tags: [
+      {
+        name: "Auth",
+        description:
+          "User authentication, sessions, and security (including 2FA)",
+      },
+      {
+        name: "Finance",
+        description:
+          "Wallet management, wallet-to-wallet transactions, and financial settings",
+      },
+      {
+        name: "Payroll",
+        description:
+          "Employee management, timesheets, time-off requests, and expense tracking",
+      },
+      {
+        name: "General",
+        description:
+          "General endpoints like Dashboard, Company, and KYB status",
+      },
+    ],
   },
 
-  apis: ["./src/app/api*.ts"],
+  apis: [
+    "./src/app/api/v1/**/*.ts",
+    "./src/server/validations/*.ts",
+    "!./src/app/api/v1/**/*.test.ts",
+    "!./src/app/api/v1/**/*.spec.ts",
+  ],
 };
 
-export const swaggerSpec = swaggerJSDoc(options);
+export function createSwaggerSpec() {
+  return swaggerJSDoc(swaggerOptions);
+}
+
+export const swaggerSpec = createSwaggerSpec();

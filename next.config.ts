@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { join } from "path";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  compress: true,
   turbopack: {
     root: join(__dirname), // Set the root to the current directory dynamically
     rules: {
@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path((?!v1/).*)",
+        destination: "/api/v1/:path",
+      },
+    ];
   },
 };
 

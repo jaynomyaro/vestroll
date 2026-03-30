@@ -19,7 +19,7 @@ export interface PaginationMeta {
  *
  * @example
  * ```typescript
- * // GET /api/employees?page=2&limit=10
+ * // GET /api/v1/employees?page=2&limit=10
  * {
  *   data: [...],           // Array of Employee objects
  *   meta: {
@@ -72,3 +72,4 @@ export function toPaginatedResponse<T>(
     },
   };
 }
+
